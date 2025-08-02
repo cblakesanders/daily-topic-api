@@ -49,24 +49,50 @@ class LlmService:
         return paragraph
 
     @staticmethod
-    def get_topic_sentences(topic):
+    def get_grammar_exercise_with_answers(topic):
         response = LlmService._client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": """You are an elementary school teacher creating a grammar exercise for 4th grade students. Take the given topic and write 2-3 simple sentences about it, but include 3-7 obvious grammar mistakes that 4th graders can identify and correct.
+                {"role": "system", "content": """You are an elementary school teacher creating a grammar exercise for 4th grade students. Take the given topic and create 2-3 simple sentences about it with intentional grammar mistakes, plus their corrected versions.
 
-                    Include mistakes like:
-                    - Missing capitalization at sentence start
-                    - Missing periods
-                    - Simple subject-verb agreement errors
-                    - Basic punctuation mistakes
+                    Requirements:
+                    - Write 2-3 sentences with obvious grammar mistakes that 4th graders can identify
+                    - Include mistakes like: missing capitalization, missing periods, subject-verb agreement errors, basic punctuation mistakes
+                    - Make content educational and age-appropriate
+                    - Return the response in this exact format:
                     
-                    Make the content educational and age-appropriate. The mistakes should be clear and not confusing."""},
-                {"role": "user", "content": f"Create sentences with grammar mistakes about: {topic}"}
+                    EXERCISE:
+                    [sentences with mistakes as a single paragraph]
+                    
+                    ANSWERS:
+                    [corrected sentences, one per line]
+                    
+                    Example:
+                    EXERCISE:
+                    the sun is hot plants need water birds can fly
+                    
+                    ANSWERS:
+                    The sun is hot.
+                    Plants need water.
+                    Birds can fly."""},
+                {"role": "user", "content": f"Create a grammar exercise with answers about: {topic}"}
             ],
-            max_tokens=150,
+            max_tokens=200,
             temperature=0.5
         )
 
-        sentences = response.choices[0].message.content
-        return sentences
+        response_text = response.choices[0].message.content.strip()
+        
+        # Parse the response to extract exercise and answers
+        parts = response_text.split('ANSWERS:')
+        if len(parts) != 2:
+            # Fallback if parsing fails
+            return "Error generating grammar exercise", []
+        
+        exercise_part = parts[0].replace('EXERCISE:', '').strip()
+        answers_part = parts[1].strip()
+        
+        # Split answers into array
+        answers = [answer.strip() for answer in answers_part.split('\n') if answer.strip()]
+        
+        return exercise_part, answers
