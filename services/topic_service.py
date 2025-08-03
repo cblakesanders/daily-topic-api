@@ -7,7 +7,7 @@ class TopicService:
         self.index = 0
 
     def get_topic(self):
-        topic = self.topics[self.index]
+        topic = self.topics[self.index % len(self.topics)]
 
         self.index += 1
 
